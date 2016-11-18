@@ -12,9 +12,6 @@ ssh_authorized_keys:
 coreos:
   update:
     reboot-strategy: "off"
-  flannel:
-    interface: $private_ipv4
-    etcd_endpoints: http://127.0.0.1:2379
   units:
     - name: etcd-member.service
       command: start
@@ -30,24 +27,12 @@ coreos:
       drop-ins:
         - name: 40-flannel.conf
           content: |
-            [Unit]
-            Requires=flanneld.service
-            After=flanneld.service
             [Service]
             EnvironmentFile=/etc/kubernetes/cni/docker_opts_cni.env
         - name: 60-dockeropts.conf
           content: |
             [Service]
             Environment="DOCKER_OPTS=--log-opt=max-file=2 --log-opt=max-size=50m"
-
-    - name: flanneld.service
-      drop-ins:
-        - name: 10-etcd.conf
-          content: |
-            [Service]
-            ExecStartPre=/usr/bin/etcdctl \
-            --endpoint=http://localhost:2379 set /coreos.com/network/config \
-            '{ "Network": "10.2.0.0/16", "Backend": {"Type": "vxlan"}}'
 
     - name: kube2iam-iptables.service
       command: start
@@ -421,6 +406,8 @@ write_files:
           - --feature-gates=AllAlpha=true
           - --cloud-config=/etc/kubernetes/cloud-config.ini
           - --use-service-account-credentials=true
+          - --allocate-node-cidrs=true
+          - --cluster-cidr=10.2.0.0/16
           resources:
             limits:
               cpu: 200m

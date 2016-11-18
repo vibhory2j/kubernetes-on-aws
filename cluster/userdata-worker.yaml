@@ -12,27 +12,11 @@ ssh_authorized_keys:
 coreos:
   update:
     reboot-strategy: "off"
-  flannel:
-    interface: $private_ipv4
-    etcd_endpoints: http://127.0.0.1:2379
   units:
-    - name: etcd-member.service
-      command: start
-      enable: true
-      drop-ins:
-        - name: 40-etcd-gateway.conf
-          content: |
-            [Service]
-            Environment="ETCD_IMAGE_TAG=v3.1.6"
-            Environment="ETCD_OPTS=gateway start --listen-addr=127.0.0.1:2379 --endpoints={{ ETCD_ENDPOINTS }}"
-
     - name: docker.service
       drop-ins:
         - name: 40-flannel.conf
           content: |
-            [Unit]
-            Requires=flanneld.service
-            After=flanneld.service
             [Service]
             EnvironmentFile=/etc/kubernetes/cni/docker_opts_cni.env
         - name: 60-dockeropts.conf
