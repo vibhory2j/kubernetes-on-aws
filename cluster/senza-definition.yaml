@@ -35,6 +35,7 @@ SenzaComponents:
       ReleaseChannel: stable # see https://coreos.com/os/docs/latest/switching-channels.html
   - WorkerSpotFleet:
       Type: Senza::SpotFleetAutoConfiguration
+      DefineParameters: false # skip CF template parameter definition
       Image: LatestCoreOSImage
       UserData: { "Fn::FindInMap" : [ "UserData", "Worker", "Value"] }
       BlockDeviceMappings:
