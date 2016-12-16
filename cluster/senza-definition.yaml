@@ -21,12 +21,38 @@ SenzaInfo:
       - ClusterID:
           Description: "ID of the cluster"
 
+Mappings:
+  UserData:
+    Master:
+      Value: "{{ Arguments.UserDataMaster }}"
+    Worker:
+      Value: "{{ Arguments.UserDataWorker }}"
 SenzaComponents:
   - Configuration:
       Type: Senza::CoreosAutoConfiguration
       PublicOnly: true # use all public subnets
       DefineParameters: false # skip CF template parameter definition
       ReleaseChannel: stable # see https://coreos.com/os/docs/latest/switching-channels.html
+  - WorkerSpotFleet:
+      Type: Senza::SpotFleetAutoConfiguration
+      Image: LatestCoreOSImage
+      UserData: { "Fn::FindInMap" : [ "UserData", "Worker", "Value"] }
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            DeleteOnTermination: true
+            VolumeSize: 50
+            VolumeType: standard
+      SecurityGroups:
+         - {Ref: WorkerSecurityGroup}
+      IamRoles:
+         - {Ref: WorkerIAMRole}
+      AssociatePublicIpAddress: true
+      TargetCapacity: 5
+      AllocationStrategy: "lowestPrice"
+      IamInstanceProfile:
+        Arn: {"Fn::GetAtt" : ["WorkerAutoScalingInstanceProfile", "Arn"] }
+
   - MasterLoadBalancer:
       Type: Senza::WeightedDnsElasticLoadBalancer
       HTTPPort: 443
@@ -64,7 +90,7 @@ SenzaComponents:
       ElasticLoadBalancer: MasterLoadBalancer
       HealthCheckGracePeriod: 480 # give master node up to 8 min to start up
       AssociatePublicIpAddress: true
-      UserData: "{{ Arguments.UserDataMaster }}"
+      UserData: { "Fn::FindInMap" : [ "UserData", "Master", "Value"] }
       AutoScaling:
          Minimum: "{{ Arguments.MasterNodes }}"
          Maximum: "{{ Arguments.MasterNodes }}"
@@ -82,6 +108,7 @@ SenzaComponents:
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
+            DeleteOnTermination: true
             VolumeSize: 50
             VolumeType: standard
       SecurityGroups:
@@ -91,7 +118,7 @@ SenzaComponents:
       ElasticLoadBalancer: WorkerLoadBalancer
       HealthCheckGracePeriod: 480 # give worker node up to 8 min to start up
       AssociatePublicIpAddress: true
-      UserData: "{{ Arguments.UserDataWorker }}"
+      UserData: { "Fn::FindInMap" : [ "UserData", "Worker", "Value"] }
       AutoScaling:
          Minimum: 1
          Maximum: "{{ Arguments.MaximumWorkerNodes}}"
