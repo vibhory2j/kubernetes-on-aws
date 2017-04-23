@@ -5,7 +5,7 @@ metadata:
   namespace: kube-system
   labels:
     application: flannel
-    version: v0.7.0
+    version: v0.7.1
 spec:
   selector:
     matchLabels:
@@ -14,7 +14,7 @@ spec:
     metadata:
       labels:
         application: flannel
-        version: v0.7.0
+        version: v0.7.1
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
@@ -24,8 +24,8 @@ spec:
         beta.kubernetes.io/arch: amd64
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.7.0
-        command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
+        image: quay.io/coreos/flannel:v0.7.1
+        command: ["/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr", "--iface=$(POD_IP)"]
         securityContext:
           privileged: true
         env:
@@ -37,6 +37,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         volumeMounts:
         - name: run
           mountPath: /run
