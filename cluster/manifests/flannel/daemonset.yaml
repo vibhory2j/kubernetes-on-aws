@@ -17,8 +17,10 @@ spec:
         version: v0.7.1
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
     spec:
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
       hostNetwork: true
       nodeSelector:
         beta.kubernetes.io/arch: amd64
